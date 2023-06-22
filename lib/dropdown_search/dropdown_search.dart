@@ -6,7 +6,7 @@ import 'package:flutter_dropdown_search/dropdown_search/widgets/popup_menu.dart'
 import 'properties/popup_props.dart';
 import 'widgets/selection_widget.dart';
 
-typedef Widget DropdownSearchPopupItemBuilder(
+typedef Widget? DropdownSearchPopupItemBuilder(
   BuildContext context,
   dynamic item,
   int index,
@@ -52,9 +52,14 @@ class DropdownSearch extends StatefulWidget {
 
   final Widget? dropdownButton;
 
+  final bool isMultiSelect;
+
+  final List<int>? preselectedItemIndex;
+
   const DropdownSearch({
     Key? key,
     required this.onSelect,
+    required this.isMultiSelect,
     required this.title,
     this.items = const [],
     required this.selectedItem,
@@ -72,6 +77,7 @@ class DropdownSearch extends StatefulWidget {
     this.dropdownButton,
     this.onChangedMultiSelection,
     this.selectedItems = const [],
+    this.preselectedItemIndex,
   }) : super(key: key);
 
   @override
@@ -95,7 +101,7 @@ class DropdownSearchState extends State<DropdownSearch> {
           Container(
             padding: widget.padding ??
                 const EdgeInsets.symmetric(
-                  vertical: 10,
+                  vertical: 16,
                   horizontal: 16,
                 ),
             margin: widget.margin ?? EdgeInsets.zero,
@@ -176,6 +182,8 @@ class DropdownSearchState extends State<DropdownSearch> {
       onSearchTextChange: widget.onSearchTextChange,
       containerDecoration: widget.containerDecoration,
       clearTextAction: widget.clearTextAction,
+      isMultiSelect: widget.isMultiSelect,
+      preselectedItemIndex: widget.preselectedItemIndex,
     );
   }
 

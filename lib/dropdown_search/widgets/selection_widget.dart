@@ -1,14 +1,15 @@
 import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dropdown_search/dropdown_search/properties/popup_props.dart';
+import 'package:flutter_dropdown_search/dropdown_search/widgets/checkbox_widget.dart';
 
 class SelectionWidget extends StatefulWidget {
   final List<dynamic> items;
+  final List<int>? preselectedItemIndex;
   final Function(dynamic) onSelect;
-
+  final bool isMultiSelect;
   final List defaultSelectedItems;
   final PopupProps popupProps;
   final Function(String) onSearchTextChange;
@@ -18,14 +19,12 @@ class SelectionWidget extends StatefulWidget {
   const SelectionWidget({
     Key? key,
     required this.popupProps,
+    required this.isMultiSelect,
+    this.preselectedItemIndex,
     required this.onSearchTextChange,
     this.defaultSelectedItems = const [],
     this.items = const [],
     required this.onSelect,
-    //this.asyncItems,
-    //this.itemAsString,
-    //this.filterFn,
-    // this.compareFn,
     this.containerDecoration,
     required this.clearTextAction,
   }) : super(key: key);
@@ -48,6 +47,7 @@ class SelectionWidgetState extends State<SelectionWidget> {
   void initState() {
     super.initState();
 
+    selectedIndexes = widget.preselectedItemIndex ?? [];
     _selectedItemsNotifier.value = widget.defaultSelectedItems;
 
     Future.delayed(
@@ -93,37 +93,38 @@ class SelectionWidgetState extends State<SelectionWidget> {
     return ValueListenableBuilder(
         valueListenable: _selectedItemsNotifier,
         builder: (ctx, value, wdgt) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Padding(
-                padding: widget.popupProps.searchFieldProps.padding,
-                child: Row(
-                  children: [
-                    Expanded(child: _searchField()),
-                    const SizedBox(
-                      width: 5,
+          return Stack(
+            alignment: Alignment.bottomRight,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Padding(
+                    padding: widget.popupProps.searchFieldProps.padding,
+                    child: Row(
+                      children: [
+                        Expanded(child: _searchField()),
+                        const SizedBox(
+                          width: 5,
+                        ),
+                        InkWell(
+                          onTap: () {
+                            searchBoxController.clear();
+                            widget.clearTextAction();
+                            setState(() {});
+                          },
+                          child: const Icon(
+                            Icons.close,
+                            size: 20,
+                          ),
+                        ),
+                      ],
                     ),
-                    InkWell(
-                      onTap: () {
-                        searchBoxController.clear();
-                        widget.clearTextAction();
-                        setState(() {});
-                      },
-                      child: const Icon(
-                        Icons.close,
-                        size: 20,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Flexible(
-                fit: widget.popupProps.fit,
-                child: Stack(
-                  children: <Widget>[
-                    StreamBuilder<List>(
+                  ),
+                  Flexible(
+                    fit: widget.popupProps.fit,
+                    child: StreamBuilder<List>(
                       stream: _itemsStream.stream,
                       builder: (context, snapshot) {
                         if (snapshot.hasError) {
@@ -172,7 +173,7 @@ class SelectionWidgetState extends State<SelectionWidget> {
                                 widget.popupProps.listViewProps.clipBehavior,
                             itemCount: snapshot.data!.length,
                             itemBuilder: (context, index) {
-                              var item = snapshot.data![index];
+                              final item = snapshot.data![index];
 
                               return _itemWidgetSingleSelection(
                                 item: item,
@@ -183,8 +184,39 @@ class SelectionWidgetState extends State<SelectionWidget> {
                         );
                       },
                     ),
+                  ),
+                  if (widget.isMultiSelect) ...[
+                    if (selectedIndexes.isNotEmpty)
+                      InkWell(
+                        onTap: () {
+                          closePopup();
+                          widget.onSelect(selectedIndexes);
+                        },
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(
+                            vertical: 10,
+                            horizontal: 16,
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.blue,
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          child: const Center(
+                            child: Text(
+                              "Okay",
+                              style: TextStyle(
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      )
                   ],
-                ),
+                ],
               ),
             ],
           );
@@ -258,16 +290,33 @@ class SelectionWidgetState extends State<SelectionWidget> {
   }
 
   Widget _itemWidgetSingleSelection({required item, required int index}) {
-    final children = widget.popupProps.itemBuilder(
+    final Widget? children = widget.popupProps.itemBuilder(
       context,
       item,
       index,
     );
 
-    return InkWell(
-      onTap: () => _handleSelectedItem(item),
-      child: IgnorePointer(child: children),
-    );
+    if (children != null) {
+      return InkWell(
+        onTap: () => widget.isMultiSelect
+            ? _handleMultipleSelectItem(index)
+            : _handleSelectedItem(item),
+        child: Row(
+          children: [
+            Flexible(
+              child: children,
+            ),
+            if (widget.isMultiSelect) ...[
+              CheckboxWidget(
+                isCheck: itemExists(index),
+              ),
+            ],
+          ],
+        ),
+      );
+    }
+
+    return const SizedBox();
   }
 
   Widget _searchField() {
@@ -364,5 +413,35 @@ class SelectionWidgetState extends State<SelectionWidget> {
   void _handleSelectedItem(newSelectedItem) {
     closePopup();
     widget.onSelect(newSelectedItem);
+  }
+
+  void _handleMultipleSelectItem(int index) {
+    if (itemExists(index)) {
+      removeMultiselectItem(index);
+    } else {
+      addMultiselectItem(index);
+    }
+  }
+
+  List<int> selectedIndexes = [];
+
+  bool itemExists(int itemIndex) {
+    if (selectedIndexes.contains(itemIndex)) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  addMultiselectItem(int itemIndex) {
+    selectedIndexes.add(itemIndex);
+    print("HERE:A: $selectedIndexes");
+    setState(() {});
+  }
+
+  removeMultiselectItem(int itemIndex) {
+    selectedIndexes.remove(itemIndex);
+    print("HERE:B: $selectedIndexes");
+    setState(() {});
   }
 }

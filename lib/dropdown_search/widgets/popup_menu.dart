@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../properties/menu_props.dart';
 
-Future<T?> showCustomMenu<T>({
+
+Future showCustomMenu({
   required BuildContext context,
   required MenuProps menuModeProps,
   required RelativeRect position,
@@ -10,7 +11,7 @@ Future<T?> showCustomMenu<T>({
 }) {
   final NavigatorState navigator = Navigator.of(context);
   return navigator.push(
-    _PopupMenuRoute<T>(
+    _PopupMenuRoute(
       context: context,
       position: position,
       child: child,
@@ -23,7 +24,6 @@ Future<T?> showCustomMenu<T>({
   );
 }
 
-// Positioning of the menu on the screen.
 class _PopupMenuRouteLayout extends SingleChildLayoutDelegate {
   // Rectangle of underlying button, relative to the overlay's dimensions.
   final RelativeRect position;

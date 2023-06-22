@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_dropdown_search/dropdown_search/properties/text_field_props.dart';
-import 'package:flutter_dropdown_search/view/data_tile.dart';
 import 'package:flutter_dropdown_search/dropdown_search/dropdown_search.dart';
+import 'package:flutter_dropdown_search/dropdown_search/properties/text_field_props.dart';
 import 'package:flutter_dropdown_search/models/user_model.dart';
+import 'package:flutter_dropdown_search/view/data_tile.dart';
+
 import '../dropdown_search/properties/popup_props.dart';
 
-class UserSearch extends StatefulWidget {
-  const UserSearch({Key? key}) : super(key: key);
+class UserSingleSearch extends StatefulWidget {
+  const UserSingleSearch({Key? key}) : super(key: key);
 
   @override
-  State<UserSearch> createState() => _UserSearchState();
+  State<UserSingleSearch> createState() => _UserSingleSearchState();
 }
 
-class _UserSearchState extends State<UserSearch> {
+class _UserSingleSearchState extends State<UserSingleSearch> {
   String queryText = '';
 
   UserModel? selectedUser;
@@ -30,7 +31,8 @@ class _UserSearchState extends State<UserSearch> {
   @override
   Widget build(BuildContext context) {
     return DropdownSearch(
-      title: "User",
+      title: "User Single Search",
+      isMultiSelect: false,
       onBeforePopupOpening: (item) async {
         setSearchQuery("");
         return true;
